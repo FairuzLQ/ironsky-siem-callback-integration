@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IronSKY × SIEM — Integrasi Realtime via Callback SDK</title>
+<meta name="description" content="Panduan mengalirkan event IronSKY ke SIEM secara realtime dengan menangkap callback SDK (RISKEVENT) lalu meneruskannya lewat collector." />
+<style>
+  :root{
+    --bg:#0d1117; --bg-soft:#161b22; --bg-card:#1c2230; --border:#2a3140;
+    --text:#e6edf3; --muted:#9aa7b6; --accent:#4f9cff; --accent-2:#7c5cff;
+    --green:#3fb950; --amber:#d29922; --red:#f85149; --code-bg:#0b0f16;
+    --radius:14px; --maxw:1200px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.65;font-size:15.5px;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:.86em;background:#222b3a;padding:.12em .42em;border-radius:6px;color:#c9d7ff}
+  h1,h2,h3,h4{line-height:1.25;font-weight:700}
+  h2{font-size:1.7rem;margin:0 0 .3em;letter-spacing:-.5px}
+  h3{font-size:1.25rem;margin:1.7em 0 .5em;color:#eaf1f8}
+  h4{font-size:1.02rem;margin:1.4em 0 .4em;color:#cdd8e6}
+  p{margin:.6em 0} ul,ol{padding-left:22px} li{margin:.35em 0}
+
+  .layout{display:flex;max-width:var(--maxw);margin:0 auto;gap:40px;padding:0 22px}
+  .sidebar{width:256px;flex:none;position:sticky;top:0;height:100vh;overflow-y:auto;padding:26px 0 60px}
+  .content{flex:1;min-width:0;padding:26px 0 120px;max-width:860px}
+  @media(max-width:960px){.layout{flex-direction:column;gap:0}.sidebar{position:static;height:auto;width:auto;border-bottom:1px solid var(--border);padding-bottom:16px}.content{padding-top:8px}}
+
+  .brand{display:flex;align-items:center;gap:11px;margin-bottom:22px;padding:0 6px}
+  .brand .logo{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;font-weight:800;color:#fff;font-size:15px;flex:none}
+  .brand b{font-size:15px}.brand span{display:block;font-size:11.5px;color:var(--muted);font-weight:500}
+  .nav a{display:block;padding:6px 12px;border-radius:8px;color:var(--muted);font-size:13.7px;font-weight:500}
+  .nav a:hover{background:var(--bg-soft);color:var(--text);text-decoration:none}
+  .nav a.active{background:#1a2740;color:#cfe0ff}
+  .nav .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:#5f6b7a;margin:18px 12px 6px;font-weight:700}
+
+  .hero{background:var(--bg-soft);border:1px solid var(--border);border-radius:var(--radius);padding:34px 32px;margin-bottom:30px}
+  .hero h1{font-size:2rem;margin:0 0 .35em;letter-spacing:-1px}
+  .hero p{font-size:1.03rem;color:var(--muted);max-width:74ch;margin:.2em 0}
+  .pill{display:inline-block;background:#22304a;color:#9dc1ff;border:1px solid #33456b;padding:3px 11px;border-radius:999px;font-size:12.5px;font-weight:600;margin:8px 6px 0 0}
+
+  section{scroll-margin-top:16px;margin-bottom:44px;border-top:1px solid var(--border);padding-top:30px}
+  section:first-of-type{border-top:none;padding-top:0}
+
+  .note,.warn,.danger,.tip{border-left:4px solid var(--accent);background:#12253f;padding:12px 16px;border-radius:0 10px 10px 0;margin:16px 0}
+  .warn{border-left-color:var(--amber);background:#2a220f}
+  .danger{border-left-color:var(--red);background:#2a1416}
+  .tip{border-left-color:var(--green);background:#0f2a17}
+  .note b,.warn b,.danger b,.tip b{display:block;margin-bottom:3px;font-size:13px;letter-spacing:.02em;text-transform:uppercase}
+  .note b{color:#9dc1ff}.warn b{color:#e3c07b}.danger b{color:#ff9b95}.tip b{color:#8ee59a}
+  .note p,.warn p,.danger p,.tip p{margin:.3em 0}
+
+  .codeblock{margin:14px 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--code-bg)}
+  .cbar{display:flex;align-items:center;justify-content:space-between;background:#131a26;padding:7px 12px;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--muted)}
+  .cbar .fname{font-family:ui-monospace,monospace;color:#8fb4e8}
+  .copy{background:#20293a;border:1px solid #384457;color:#c9d7ff;border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer;font-weight:600}
+  .copy:hover{background:#2a3446}
+  pre{margin:0;padding:14px 16px;overflow-x:auto;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:1.6;color:#d5e0f0}
+  pre .add{color:#8ee59a} pre .cmt{color:#6a7a8c}
+
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;overflow:hidden;border-radius:10px;border:1px solid var(--border)}
+  th{background:var(--bg-soft);font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:10px 13px}
+  td{padding:9px 13px;border-top:1px solid var(--border);vertical-align:top}
+  .foot{color:var(--muted);font-size:13px;text-align:center;border-top:1px solid var(--border);padding-top:22px;margin-top:20px}
+
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+  .tabs button{background:#161d2b;border:1px solid var(--border);color:var(--muted);border-radius:8px 8px 0 0;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600}
+  .tabs button.active{background:var(--code-bg);color:#cfe0ff;border-bottom-color:var(--code-bg)}
+  .tabpanel{display:none} .tabpanel.active{display:block}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">IS</div><div><b>IronSKY × SIEM</b><span>Realtime via Callback SDK</span></div></div>
+    <nav class="nav">
+      <div class="lbl">Mulai</div>
+      <a href="#overview">Ringkasan</a>
+      <a href="#arsitektur">Cara Kerja &amp; Arsitektur</a>
+      <a href="#vs">Callback vs S3 (pilih mana?)</a>
+      <div class="lbl">SDK &amp; Callback</div>
+      <a href="#prasyarat">Prasyarat SDK</a>
+      <a href="#callback">Callback RISKEVENT</a>
+      <a href="#payload">Bentuk Payload ke SIEM</a>
+      <div class="lbl">Kirim ke SIEM</div>
+      <a href="#s1">1 · Bangun payload di app</a>
+      <a href="#s2">2 · Kirim (POST) dari app</a>
+      <a href="#s3">3 · Collector / Gateway</a>
+      <a href="#s4">4 · Collector → SIEM</a>
+      <a href="#s5">5 · Parsing &amp; Deteksi</a>
+      <div class="lbl">Per Framework</div>
+      <a href="#frameworks">Kode per Framework</a>
+      <div class="lbl">Penutup</div>
+      <a href="#verifikasi">Verifikasi</a>
+      <a href="#keamanan">Keamanan</a>
+      <a href="#troubleshoot">Troubleshooting</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <div class="hero">
+      <h1>Integrasi IronSKY ke SIEM — Realtime via Callback SDK</h1>
+      <p>Panduan menangkap event keamanan dari <b>callback SDK IronSKY</b> di dalam aplikasi, lalu meneruskannya ke SIEM Anda <b>seketika (realtime)</b> melalui sebuah collector. Beginner-friendly, lengkap dengan contoh per-framework.</p>
+      <div>
+        <span class="pill">Metode: SDK callback (push)</span>
+        <span class="pill">Sifat: realtime</span>
+        <span class="pill">Perlu ubah app: ya (beberapa baris)</span>
+        <span class="pill">Contoh SIEM: Wazuh</span>
+      </div>
+    </div>
+
+    <section id="overview">
+      <h2>Ringkasan</h2>
+      <p>Metode ini memanfaatkan fakta bahwa SDK IronSKY sudah memanggil <b>callback</b> setiap kali mendeteksi ancaman di perangkat (root, Frida, emulator, MITM, keylogger, dll). Alih-alih menunggu file harian di S3, aplikasi <b>menangkap event itu saat terjadi</b> dan mengirimkannya ke SIEM Anda dalam hitungan detik.</p>
+      <p>Karena aplikasi mobile tidak boleh memegang kredensial SIEM, event tidak dikirim langsung ke SIEM, melainkan ke sebuah <b>collector</b> (endpoint HTTPS milik Anda) yang lalu meneruskannya ke SIEM.</p>
+      <div class="note"><b>Untuk Pemula</b>
+        <p><b>Callback</b> = fungsi yang "dipanggil balik" oleh SDK saat suatu kejadian muncul. Anda mendaftarkan fungsi Anda, lalu SDK menjalankannya tiap ada event, sambil menyerahkan datanya.</p>
+        <p><b>Collector</b> = program kecil/endpoint milik Anda yang menerima data dari aplikasi lalu meneruskannya ke SIEM. Ia menjadi "perantara" agar rahasia SIEM tidak bocor ke aplikasi.</p>
+      </div>
+      <div class="tip"><b>Sudah punya panduan S3?</b>
+        <p>Ini metode <b>kedua</b>, pelengkap dari <a href="https://fairuzlq.github.io/ironsky-siem-log-forwarding/">panduan integrasi via S3 (batch)</a>. Boleh dipakai bersamaan: callback untuk realtime, S3 untuk cadangan/histori.</p>
+      </div>
+    </section>
+
+    <section id="arsitektur">
+      <h2>Cara Kerja &amp; Arsitektur</h2>
+      <div class="diagram codeblock"><div class="cbar"><span class="fname">alur realtime</span></div><pre>
+  Perangkat pengguna                         Infrastruktur Anda                    SIEM
+ ┌──────────────────────┐                  ┌──────────────────────┐        ┌───────────────┐
+ │ Aplikasi + SDK IronSKY│                  │  Collector / Gateway  │        │  Wazuh /       │
+ │                       │   HTTPS POST     │  (endpoint HTTPS)     │        │  Splunk / ELK  │
+ │ callback RISKEVENT ───┼────  JSON  ─────▶│  - auth token         │──────▶ │  rules → ALERT │
+ │  { key, responseType }│                  │  - normalisasi        │ file/  │  + dashboard   │
+ │  + DEVINFO {udid,...}  │                  │  - tulis events.jsonl │ HEC    └───────────────┘
+ └──────────────────────┘                  └──────────────────────┘
+</pre></div>
+      <p>Tiga bagian: <b>(1)</b> aplikasi menangkap event dari callback, <b>(2)</b> mengirimnya ke collector milik Anda, <b>(3)</b> collector menormalkan &amp; menyuapkan ke SIEM (persis seperti sisi SIEM pada metode S3).</p>
+      <div class="danger"><b>Jangan kirim langsung dari app ke SIEM</b>
+        <p>Aplikasi mobile bisa dibongkar (reverse-engineer). Jika token/endpoint SIEM ditaruh di app, itu bisa dicuri dan dipakai menyuntik log palsu. Selalu lewat <b>collector</b> yang punya autentikasi sendiri. Lihat bagian <a href="#keamanan">Keamanan</a>.</p>
+      </div>
+    </section>
+
+    <section id="vs">
+      <h2>Callback vs S3 — Pilih Mana?</h2>
+      <table>
+        <tr><th>Aspek</th><th>Callback (panduan ini)</th><th>S3 (batch)</th></tr>
+        <tr><td>Kecepatan</td><td>Realtime (detik)</td><td>Batch harian (T+1)</td></tr>
+        <tr><td>Ubah aplikasi?</td><td>Ya, tambah kode di callback</td><td>Tidak</td></tr>
+        <tr><td>Infra tambahan</td><td>Perlu collector HTTPS</td><td>Cukup AWS CLI di server</td></tr>
+        <tr><td>Saat app offline</td><td>Harus buffer/retry di app</td><td>Tetap tercatat (via S3)</td></tr>
+        <tr><td>Cocok untuk</td><td>Deteksi &amp; respons cepat</td><td>Histori, audit, baseline</td></tr>
+      </table>
+      <div class="tip"><b>Rekomendasi</b><p>Pakai <b>keduanya</b>: callback untuk alert cepat, S3 sebagai jaring pengaman (tidak ada event yang hilang walau collector/app sempat down).</p></div>
+    </section>
+
+    <section id="prasyarat">
+      <h2>Prasyarat SDK</h2>
+      <p>SDK IronSKY sudah harus terpasang &amp; ter-inisialisasi di aplikasi. Kalau belum, ikuti dulu <a href="https://fairuzlq.github.io/ironsky-manual-integration/">panduan integrasi SDK IronSKY</a>. Urutan pemanggilan yang benar:</p>
+      <div class="codeblock"><div class="cbar"><span class="fname">urutan wajib (Android)</span><button class="copy">Copy</button></div><pre>1. registerService(...) untuk RISKEVENT   ← daftarkan callback DULU
+2. registerService(...) untuk DEVINFO
+3. setUserId(...)
+4. initAppsecEverisk(context, KEY)         ← init PALING AKHIR</pre></div>
+      <div class="warn"><b>Jebakan urutan (khususnya React Native)</b>
+        <p><code>registerService</code> harus dipanggil <b>sebelum</b> <code>initAppsecEverisk</code>. Jika dibalik, callback tidak akan pernah terpanggil (<code>callbacks:0</code>) dan tidak ada event yang bisa Anda kirim ke SIEM.</p>
+      </div>
+    </section>
+
+    <section id="callback">
+      <h2>Callback RISKEVENT</h2>
+      <p>Event risiko dikirim SDK lewat <code>registerService(callback, Type.RISKEVENT, 0.5)</code>. Callback menerima sebuah objek JSON:</p>
+      <div class="codeblock"><div class="cbar"><span class="fname">isi callback (JSON asli dari SDK)</span><button class="copy">Copy</button></div><pre>{
+  "key": "event_risk_root",                 <span class="cmt">// jenis ancaman</span>
+  "responseType": 1,                          <span class="cmt">// aksi RASP (int)</span>
+  "responseI18n": "Perangkat ter-root ..."    <span class="cmt">// pesan terlokalisasi</span>
+}</pre></div>
+      <table>
+        <tr><th>Field callback</th><th>Arti</th></tr>
+        <tr><td><code>key</code></td><td>Jenis ancaman, mis. <code>event_risk_root</code>, <code>event_high_risk_MITM_android</code>. Ini yang jadi <code>security_event</code> di SIEM.</td></tr>
+        <tr><td><code>responseType</code></td><td>Kode aksi respons RASP (integer).</td></tr>
+        <tr><td><code>responseI18n</code></td><td>Teks pesan respons (sesuai bahasa).</td></tr>
+      </table>
+      <p>Callback kedua, <code>Type.DEVINFO</code>, memberi <b>sidik jari perangkat</b> (mis. <code>udid</code>). Simpan nilai terakhirnya, lalu gabungkan ke tiap event agar SIEM tahu perangkat mana.</p>
+      <div class="note"><b>Kabar baik</b><p>Sample resmi SecIron sudah menuliskan di komentar: <i>"forward <code>json</code> to your backend REST API"</i>. Jadi meneruskan event ke collector memang alur yang diniatkan.</p></div>
+    </section>
+
+    <section id="payload">
+      <h2>Bentuk Payload yang Dikirim ke SIEM</h2>
+      <p>Agar bisa memakai <b>rule SIEM yang sama</b> dengan metode S3, kirim payload dengan skema yang seragam, gabungan event + device + user + konteks aplikasi + waktu:</p>
+      <div class="codeblock"><div class="cbar"><span class="fname">payload yang dikirim app → collector</span><button class="copy">Copy</button></div><pre>{
+  "integration": "ironsky",
+  "source": "sdk_callback",
+  "ironsky": {
+    "security_event": "event_risk_root",
+    "response_type": 1,
+    "response_message": "Perangkat ter-root terdeteksi",
+    "udid": "1a2b3c4d-0000-demo-udid-999999999999",
+    "user_udid": "user-123",
+    "app_id": "1141",
+    "app_name": "Contoh Bank App",
+    "os": "android",
+    "os_version": "13",
+    "model_name": "Pixel 8a",
+    "event_time": "2026-09-19T12:00:00Z"
+  }
+}</pre></div>
+      <div class="tip"><b>Kenapa dibungkus <code>ironsky</code>?</b><p>Skema ini sama dengan hasil normalisasi pada metode S3, jadi decoder/rule SIEM (mis. yang mem-filter <code>ironsky.security_event</code>) langsung bisa dipakai ulang tanpa perubahan.</p></div>
+    </section>
+
+    <section id="s1">
+      <h2>Langkah 1 — Bangun Payload di Callback</h2>
+      <p>Di dalam callback RISKEVENT, ambil <code>key/responseType</code>, gabung dengan DEVINFO terakhir + userId + info app + timestamp, jadi satu objek seperti di atas. (Lihat kode lengkap per-framework di <a href="#frameworks">bawah</a>.)</p>
+      <div class="warn"><b>Jangan blok UI thread</b><p>Pengiriman jaringan harus di thread background (coroutine/AsyncTask/DispatchQueue), jangan di thread utama, supaya UI tidak nge-freeze saat event datang.</p></div>
+    </section>
+
+    <section id="s2">
+      <h2>Langkah 2 — Kirim (POST) dari Aplikasi</h2>
+      <p>Kirim payload sebagai JSON via <code>HTTPS POST</code> ke endpoint collector Anda, dengan header token autentikasi.</p>
+      <div class="codeblock"><div class="cbar"><span class="fname">Kotlin — kirim dengan OkHttp (di background)</span><button class="copy">Copy</button></div><pre>val body = payload.toString()
+  .toRequestBody("application/json".toMediaType())
+val req = Request.Builder()
+  .url("https://collector.perusahaan-anda.com/ironsky")
+  .header("Authorization", "Bearer &lt;TOKEN_APP&gt;")
+  .post(body).build()
+OkHttpClient().newCall(req).enqueue(object : Callback {
+  override fun onFailure(call: Call, e: IOException) { /* simpan untuk retry */ }
+  override fun onResponse(call: Call, resp: Response) { resp.close() }
+})</pre></div>
+      <div class="note"><b>Tangani offline</b><p>Jika POST gagal (tidak ada internet), simpan payload di antrean lokal dan coba lagi nanti. Atau andalkan metode S3 sebagai cadangan agar event tidak hilang.</p></div>
+    </section>
+
+    <section id="s3">
+      <h2>Langkah 3 — Collector / Gateway</h2>
+      <p>Collector adalah endpoint HTTPS kecil milik Anda yang: memeriksa token, (opsional) menormalkan, lalu menuliskan event ke tempat yang dibaca SIEM. Contoh minimal dengan Python Flask:</p>
+      <div class="codeblock"><div class="cbar"><span class="fname">collector.py (contoh minimal)</span><button class="copy">Copy</button></div><pre>from flask import Flask, request, abort
+import json, os
+app = Flask(__name__)
+TOKEN = os.environ["APP_TOKEN"]           # token yang sama dgn di aplikasi
+OUT   = "/opt/ironsky/out/events.jsonl"   # file yang dibaca SIEM
+
+@app.post("/ironsky")
+def ingest():
+    if request.headers.get("Authorization") != f"Bearer {TOKEN}":
+        abort(401)
+    ev = request.get_json(force=True, silent=True) or {}
+    with open(OUT, "a") as f:
+        f.write(json.dumps(ev, ensure_ascii=False) + "\n")
+    return ("", 204)</pre></div>
+      <div class="danger"><b>Wajib untuk produksi</b>
+        <p>Jalankan di belakang <b>HTTPS/TLS</b> (mis. Nginx + sertifikat), pakai token yang kuat, batasi rate (anti-spam), dan validasi payload. Collector ini contoh minimal, bukan siap-produksi apa adanya.</p>
+      </div>
+    </section>
+
+    <section id="s4">
+      <h2>Langkah 4 — Collector → SIEM</h2>
+      <p>Cara collector menyuapkan ke SIEM sama persis dengan sisi SIEM pada metode S3, tinggal pilih:</p>
+      <h4>Opsi A — File yang di-tail SIEM (paling umum)</h4>
+      <p>Collector menulis ke <code>events.jsonl</code> (seperti contoh di atas), lalu SIEM membacanya.</p>
+      <div class="codeblock"><div class="cbar"><span class="fname">Wazuh — /var/ossec/etc/ossec.conf</span><button class="copy">Copy</button></div><pre>&lt;ossec_config&gt;
+<span class="add">  &lt;localfile&gt;</span>
+<span class="add">    &lt;log_format&gt;json&lt;/log_format&gt;</span>
+<span class="add">    &lt;location&gt;/opt/ironsky/out/events.jsonl&lt;/location&gt;</span>
+<span class="add">  &lt;/localfile&gt;</span>
+&lt;/ossec_config&gt;</pre></div>
+      <h4>Opsi B — Kirim langsung ke intake SIEM</h4>
+      <p>Dari collector, teruskan ke input HTTP SIEM (mis. Splunk HEC, atau Elastic via pipeline). Untuk Splunk: <code>POST https://splunk:8088/services/collector</code> dengan header <code>Authorization: Splunk &lt;HEC_TOKEN&gt;</code>.</p>
+      <div class="tip"><b>Ingat rotasi</b><p>Sama seperti metode S3, kalau memakai file <code>events.jsonl</code>, pasang <code>logrotate</code> dengan <code>copytruncate</code> agar disk tidak penuh.</p></div>
+    </section>
+
+    <section id="s5">
+      <h2>Langkah 5 — Parsing &amp; Deteksi</h2>
+      <p>Karena payload memakai skema <code>ironsky.*</code> yang sama dengan metode S3, <b>rule SIEM yang sama bisa dipakai ulang</b>. Contoh rule Wazuh:</p>
+      <div class="codeblock"><div class="cbar"><span class="fname">Wazuh — contoh rule</span><button class="copy">Copy</button></div><pre>&lt;group name="ironsky,seciron,"&gt;
+  &lt;rule id="100106" level="12"&gt;
+    &lt;decoded_as&gt;json&lt;/decoded_as&gt;
+    &lt;field name="ironsky.security_event" type="pcre2"&gt;^event_risk_root$&lt;/field&gt;
+    &lt;description&gt;IronSKY: rooted device ($(ironsky.udid))&lt;/description&gt;
+    &lt;mitre&gt;&lt;id&gt;T1548&lt;/id&gt;&lt;/mitre&gt;
+    &lt;group&gt;rooting,&lt;/group&gt;
+  &lt;/rule&gt;
+&lt;/group&gt;</pre></div>
+      <div class="note"><b>Daftar lengkap event + level + MITRE</b><p>Gunakan tabel referensi <code>security_event</code> dari <a href="https://fairuzlq.github.io/ironsky-siem-log-forwarding/#appendix">panduan S3</a> untuk membuat rule tiap jenis ancaman.</p></div>
+    </section>
+
+    <section id="frameworks">
+      <h2>Kode per Framework</h2>
+      <p>Tambahkan pengiriman ke collector di dalam callback RISKEVENT. Berikut inti kodenya per stack.</p>
+      <div class="tabs">
+        <button data-t="kt" class="active">Kotlin</button>
+        <button data-t="jv">Java</button>
+        <button data-t="fl">Flutter</button>
+        <button data-t="rn">React Native</button>
+        <button data-t="ios">iOS Swift</button>
+      </div>
+      <div class="tabpanel active" data-p="kt">
+        <div class="codeblock"><div class="cbar"><span class="fname">MainActivity.kt</span><button class="copy">Copy</button></div><pre>RiskStubAPI.registerService(object : CallBack {
+  override fun onResult(type: Type, result: Any) {
+    val ev = result as? JSONObject ?: return
+    val dev = DEVINFO   // JSONObject terakhir dari callback DEVINFO
+<span class="add">    val payload = JSONObject().put("integration","ironsky").put("source","sdk_callback")</span>
+<span class="add">      .put("ironsky", JSONObject()</span>
+<span class="add">        .put("security_event", ev.optString("key"))</span>
+<span class="add">        .put("response_type", ev.optInt("responseType",-1))</span>
+<span class="add">        .put("udid", dev?.optString("udid"))</span>
+<span class="add">        .put("app_id", IronSkyConfig.APP_ID)</span>
+<span class="add">        .put("event_time", java.time.Instant.now().toString()))</span>
+<span class="add">    postToCollector(payload)   // OkHttp di background (lihat Langkah 2)</span>
+  }
+}, Type.RISKEVENT, 0.5)</pre></div>
+      </div>
+      <div class="tabpanel" data-p="jv">
+        <div class="codeblock"><div class="cbar"><span class="fname">MainActivity.java</span><button class="copy">Copy</button></div><pre>RiskStubAPI.registerService(new CallBack() {
+  @Override public void onResult(Type type, Object result) {
+    if (!(result instanceof JSONObject)) return;
+    JSONObject ev = (JSONObject) result;
+    JSONObject iron = new JSONObject();
+    iron.put("security_event", ev.optString("key"));
+    iron.put("response_type", ev.optInt("responseType", -1));
+    iron.put("udid", DEVINFO != null ? DEVINFO.optString("udid") : null);
+    JSONObject payload = new JSONObject()
+      .put("integration","ironsky").put("source","sdk_callback").put("ironsky", iron);
+    postToCollector(payload);   // di thread background
+  }
+}, Type.RISKEVENT, 0.5);</pre></div>
+      </div>
+      <div class="tabpanel" data-p="fl">
+        <div class="codeblock"><div class="cbar"><span class="fname">Flutter — teruskan dari sisi native (Android)</span><button class="copy">Copy</button></div><pre>// Di MainActivity.kt (host Android), callback yang sama:
+RiskStubAPI.registerService(object : CallBack {
+  override fun onResult(type: Type, result: Any) {
+    val ev = result as? JSONObject ?: return
+    // Opsi 1: POST langsung dari native (paling sederhana)
+    postToCollector(buildPayload(ev, DEVINFO))
+    // Opsi 2: kirim ke Dart via MethodChannel/EventChannel lalu POST dari Dart
+  }
+}, Type.RISKEVENT, 0.5)</pre></div>
+      </div>
+      <div class="tabpanel" data-p="rn">
+        <div class="codeblock"><div class="cbar"><span class="fname">React Native — Native Module → JS</span><button class="copy">Copy</button></div><pre>// Native (Android) module: registerService SEBELUM init, lalu emit ke JS
+sendEvent("IronSkyRisk", writableMapFrom(ev))   // DeviceEventEmitter
+
+// JS:
+import { NativeEventEmitter, NativeModules } from 'react-native';
+const em = new NativeEventEmitter(NativeModules.IronSky);
+em.addListener('IronSkyRisk', (ev) =&gt; {
+  fetch('https://collector.perusahaan-anda.com/ironsky', {
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer &lt;TOKEN&gt;'},
+    body: JSON.stringify({ integration:'ironsky', source:'sdk_callback', ironsky: ev })
+  }).catch(()=&gt;{ /* simpan untuk retry */ });
+});</pre></div>
+        <div class="warn"><b>RN:</b> <code>registerService</code> harus sebelum <code>initAppsecEverisk</code>, kalau tidak <code>callbacks:0</code>.</div>
+      </div>
+      <div class="tabpanel" data-p="ios">
+        <div class="codeblock"><div class="cbar"><span class="fname">AppDelegate.swift</span><button class="copy">Copy</button></div><pre>RiskStub.registerService { data, modularType in
+  guard let ev = data as? [String: Any] else { return }
+  var iron: [String: Any] = [
+    "security_event": ev["key"] ?? "",
+    "response_type":  ev["responseType"] ?? -1,
+    "udid": RiskStub.getEveriskUdid() ?? "",
+    "event_time": ISO8601DateFormatter().string(from: Date())
+  ]
+  let payload: [String: Any] = ["integration":"ironsky","source":"sdk_callback","ironsky":iron]
+  // POST payload ke collector pakai URLSession (di background)
+  self.postToCollector(payload)
+}</pre></div>
+      </div>
+    </section>
+
+    <section id="verifikasi">
+      <h2>Verifikasi End-to-End</h2>
+      <ol>
+        <li><b>Picu event</b> di perangkat uji (mis. jalankan di emulator / device ter-root) → SDK memanggil callback.</li>
+        <li><b>Cek collector menerima:</b> lihat log collector, atau <code>tail -f /opt/ironsky/out/events.jsonl</code>.</li>
+        <li><b>Cek SIEM:</b> Wazuh → dashboard filter <code>rule.groups: ironsky</code>, atau <code>alerts.json</code>.</li>
+        <li><b>Latensi:</b> dari event muncul sampai tampil di SIEM harusnya beberapa detik.</li>
+      </ol>
+    </section>
+
+    <section id="keamanan">
+      <h2>Keamanan</h2>
+      <ul>
+        <li><b>Jangan taruh kredensial SIEM di aplikasi.</b> Aplikasi hanya tahu URL collector + token app, bukan detail SIEM.</li>
+        <li><b>HTTPS + (opsional) certificate pinning</b> dari app ke collector.</li>
+        <li><b>Token app</b> yang kuat, dan idealnya bisa dirotasi/dicabut per rilis.</li>
+        <li><b>Minimalkan PII.</b> Kirim <code>udid</code>/<code>user_id</code> secukupnya, hindari data pribadi sensitif.</li>
+        <li><b>Rate limit &amp; validasi</b> di collector untuk mencegah penyalahgunaan endpoint.</li>
+      </ul>
+      <div class="warn"><b>Perhatian: app dilindungi RASP</b><p>Aplikasi yang memakai IronSKY biasanya juga menerapkan SSL pinning/anti-tamper. Pastikan koneksi ke collector Anda tidak ikut terblokir oleh kebijakan jaringan app.</p></div>
+    </section>
+
+    <section id="troubleshoot">
+      <h2>Troubleshooting</h2>
+      <table>
+        <tr><th>Gejala</th><th>Penyebab &amp; Solusi</th></tr>
+        <tr><td>Callback tidak pernah terpanggil</td><td>Urutan salah, <code>registerService</code> harus <b>sebelum</b> <code>initAppsecEverisk</code> (kritis di React Native).</td></tr>
+        <tr><td>POST gagal / timeout</td><td>Cek URL collector, TLS/sertifikat, dan apakah kebijakan jaringan app memblokir domain collector.</td></tr>
+        <tr><td>Collector 401</td><td>Token di app tidak sama dengan di collector.</td></tr>
+        <tr><td>Event masuk collector tapi tidak di SIEM</td><td>Pastikan SIEM membaca <code>events.jsonl</code> (<code>log_format json</code>) dan setiap baris JSON valid.</td></tr>
+        <tr><td>Event hilang saat app offline</td><td>Tambah buffer/retry di app, atau andalkan metode S3 sebagai cadangan.</td></tr>
+        <tr><td>Event dobel</td><td>Retry tanpa idempotensi. Sertakan id unik (mis. <code>start_id</code>+waktu) dan de-dup di collector.</td></tr>
+      </table>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ</h2>
+      <h4>Apakah ini realtime?</h4>
+      <p>Ya. Event dikirim saat terjadi (hitungan detik), berbeda dengan metode S3 yang batch harian.</p>
+      <h4>Apakah harus mengubah aplikasi?</h4>
+      <p>Ya, tapi hanya menambah beberapa baris di dalam callback RISKEVENT untuk mem-POST payload. SDK-nya sendiri sudah memanggil callback.</p>
+      <h4>Boleh memakai callback DAN S3 sekaligus?</h4>
+      <p>Sangat disarankan. Callback untuk kecepatan, S3 untuk jaminan kelengkapan histori.</p>
+      <h4>Kenapa perlu collector, tidak langsung ke SIEM?</h4>
+      <p>Agar rahasia SIEM tidak tertanam di aplikasi (yang bisa dibongkar). Collector menjadi lapisan autentikasi &amp; kontrol milik Anda.</p>
+    </section>
+
+    <div class="foot">
+      Dokumentasi integrasi IronSKY × SIEM (Realtime via Callback SDK).<br/>
+      Semua endpoint, token, APP_ID, dan udid di halaman ini hanyalah contoh. Ganti dengan nilai asli Anda.
+    </div>
+  </main>
+</div>
+
+<script>
+  document.querySelectorAll('.codeblock').forEach(function(cb){
+    var btn = cb.querySelector('.copy'); var pre = cb.querySelector('pre');
+    if(!btn || !pre) return;
+    btn.addEventListener('click', function(){
+      var text = pre.innerText.replace(/^»\s?/gm,'');
+      navigator.clipboard.writeText(text).then(function(){
+        var t = btn.textContent; btn.textContent = 'Tersalin!'; setTimeout(function(){ btn.textContent = t; }, 1400);
+      });
+    });
+  });
+  // tabs
+  document.querySelectorAll('.tabs').forEach(function(bar){
+    var panels = bar.parentElement.querySelectorAll('.tabpanel');
+    bar.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click', function(){
+        bar.querySelectorAll('button').forEach(function(x){x.classList.remove('active')});
+        b.classList.add('active');
+        panels.forEach(function(p){ p.classList.toggle('active', p.getAttribute('data-p')===b.getAttribute('data-t')); });
+      });
+    });
+  });
+  // scrollspy
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+  var secs = links.map(function(a){ return document.querySelector(a.getAttribute('href')); });
+  function onScroll(){
+    var y = window.scrollY + 120, idx = 0;
+    for (var i=0;i<secs.length;i++){ if(secs[i] && secs[i].offsetTop <= y) idx = i; }
+    links.forEach(function(a){ a.classList.remove('active'); });
+    if(links[idx]) links[idx].classList.add('active');
+  }
+  window.addEventListener('scroll', onScroll); onScroll();
+</script>
+</body>
+</html>
