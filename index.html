@@ -399,7 +399,6 @@ em.addListener('IronSkyRisk', (ev) =&gt; {
         <li><b>Jangan taruh kredensial SIEM di aplikasi.</b> Aplikasi hanya tahu URL collector + token app, bukan detail SIEM.</li>
         <li><b>HTTPS + (opsional) certificate pinning</b> dari app ke collector.</li>
         <li><b>Token app</b> yang kuat, dan idealnya bisa dirotasi/dicabut per rilis.</li>
-        <li><b>Minimalkan PII.</b> Kirim <code>udid</code>/<code>user_id</code> secukupnya, hindari data pribadi sensitif.</li>
         <li><b>Rate limit &amp; validasi</b> di collector untuk mencegah penyalahgunaan endpoint.</li>
       </ul>
       <div class="warn"><b>Perhatian: app dilindungi RASP</b><p>Aplikasi yang memakai IronSKY biasanya juga menerapkan SSL pinning/anti-tamper. Pastikan koneksi ke collector Anda tidak ikut terblokir oleh kebijakan jaringan app.</p></div>
@@ -413,7 +412,6 @@ em.addListener('IronSkyRisk', (ev) =&gt; {
         <tr><td>POST gagal / timeout</td><td>Cek URL collector, TLS/sertifikat, dan apakah kebijakan jaringan app memblokir domain collector.</td></tr>
         <tr><td>Collector 401</td><td>Token di app tidak sama dengan di collector.</td></tr>
         <tr><td>Event masuk collector tapi tidak di SIEM</td><td>Pastikan SIEM membaca <code>events.jsonl</code> (<code>log_format json</code>) dan setiap baris JSON valid.</td></tr>
-        <tr><td>Event hilang saat app offline</td><td>Tambah buffer/retry di app, atau andalkan metode S3 sebagai cadangan.</td></tr>
         <tr><td>Event dobel</td><td>Retry tanpa idempotensi. Sertakan id unik (mis. <code>start_id</code>+waktu) dan de-dup di collector.</td></tr>
       </table>
     </section>
@@ -424,10 +422,6 @@ em.addListener('IronSkyRisk', (ev) =&gt; {
       <p>Ya. Event dikirim saat terjadi (hitungan detik), berbeda dengan metode S3 yang batch harian.</p>
       <h4>Apakah harus mengubah aplikasi?</h4>
       <p>Ya, tapi hanya menambah beberapa baris di dalam callback RISKEVENT untuk mem-POST payload. SDK-nya sendiri sudah memanggil callback.</p>
-      <h4>Boleh memakai callback DAN S3 sekaligus?</h4>
-      <p>Sangat disarankan. Callback untuk kecepatan, S3 untuk jaminan kelengkapan histori.</p>
-      <h4>Kenapa perlu collector, tidak langsung ke SIEM?</h4>
-      <p>Agar rahasia SIEM tidak tertanam di aplikasi (yang bisa dibongkar). Collector menjadi lapisan autentikasi &amp; kontrol milik Anda.</p>
     </section>
 
     <div class="foot">
