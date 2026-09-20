@@ -121,9 +121,6 @@
         <p><b>Callback</b> = fungsi yang "dipanggil balik" oleh SDK saat suatu kejadian muncul. Anda mendaftarkan fungsi Anda, lalu SDK menjalankannya tiap ada event, sambil menyerahkan datanya.</p>
         <p><b>Collector</b> = program kecil/endpoint milik Anda yang menerima data dari aplikasi lalu meneruskannya ke SIEM. Ia menjadi "perantara" agar rahasia SIEM tidak bocor ke aplikasi.</p>
       </div>
-      <div class="tip"><b>Sudah punya panduan S3?</b>
-        <p>Ini metode <b>kedua</b>, pelengkap dari <a href="https://fairuzlq.github.io/ironsky-siem-log-forwarding/">panduan integrasi via S3 (batch)</a>. Boleh dipakai bersamaan: callback untuk realtime, S3 untuk cadangan/histori.</p>
-      </div>
     </section>
 
     <section id="arsitektur">
@@ -139,9 +136,6 @@
  └──────────────────────┘                  └──────────────────────┘
 </pre></div>
       <p>Tiga bagian: <b>(1)</b> aplikasi menangkap event dari callback, <b>(2)</b> mengirimnya ke collector milik Anda, <b>(3)</b> collector menormalkan &amp; menyuapkan ke SIEM (persis seperti sisi SIEM pada metode S3).</p>
-      <div class="danger"><b>Jangan kirim langsung dari app ke SIEM</b>
-        <p>Aplikasi mobile bisa dibongkar (reverse-engineer). Jika token/endpoint SIEM ditaruh di app, itu bisa dicuri dan dipakai menyuntik log palsu. Selalu lewat <b>collector</b> yang punya autentikasi sendiri. Lihat bagian <a href="#keamanan">Keamanan</a>.</p>
-      </div>
     </section>
 
     <section id="vs">
@@ -151,10 +145,7 @@
         <tr><td>Kecepatan</td><td>Realtime (detik)</td><td>Batch harian (T+1)</td></tr>
         <tr><td>Ubah aplikasi?</td><td>Ya, tambah kode di callback</td><td>Tidak</td></tr>
         <tr><td>Infra tambahan</td><td>Perlu collector HTTPS</td><td>Cukup AWS CLI di server</td></tr>
-        <tr><td>Saat app offline</td><td>Harus buffer/retry di app</td><td>Tetap tercatat (via S3)</td></tr>
-        <tr><td>Cocok untuk</td><td>Deteksi &amp; respons cepat</td><td>Histori, audit, baseline</td></tr>
       </table>
-      <div class="tip"><b>Rekomendasi</b><p>Pakai <b>keduanya</b>: callback untuk alert cepat, S3 sebagai jaring pengaman (tidak ada event yang hilang walau collector/app sempat down).</p></div>
     </section>
 
     <section id="prasyarat">
