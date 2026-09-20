@@ -183,8 +183,8 @@
   "eventId": "1141###&lt;udid&gt;###&lt;start_id&gt;###11###event_android_unofficial_installation_source",
   "time": 1789828899241
 }</pre></div>
-      <div class="tip"><b>Diverifikasi langsung di emulator</b>
-        <p>Diuji dengan app contoh Kotlin (SDK 5.14.0, app_id 1141) di Android emulator: callback benar-benar terpanggil (<code>callbacks:2</code>, salah satunya milik aplikasi), dengan struktur payload persis seperti di atas. Event yang terpicu: <code>event_emulator_android</code>, <code>event_high_risk_emulator_android</code>, <code>event_android_unofficial_installation_source</code>, <code>event_android_screen_reader_capability</code>. Nilai <code>key</code> ini <b>sama persis</b> dengan <code>Security event</code> pada metode S3, jadi rule SIEM yang sama langsung berlaku.</p>
+      <div class="tip"><b>Diverifikasi end-to-end (emulator → collector → Wazuh)</b>
+        <p>Diuji nyata: app contoh Kotlin (SDK 5.14.0, app_id 1141) di Android emulator menangkap callback (<code>callbacks:2</code>, salah satunya milik aplikasi), mem-POST payload ke collector (HTTP <code>204</code>), dan event muncul sebagai <b>alert di Wazuh</b> dengan level + MITRE yang benar, mis. <code>event_enchanced_root</code> → level 13 (T1548), <code>event_high_risk_emulator_android</code> → level 12 (T1497.001), <code>event_risk_root</code> → level 12. Nilai <code>key</code> callback <b>sama persis</b> dengan <code>Security event</code> pada metode S3, jadi rule SIEM yang sama langsung berlaku.</p>
       </div>
       <table>
         <tr><th>Field callback</th><th>Arti</th></tr>
