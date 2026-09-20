@@ -172,16 +172,29 @@
     <section id="callback">
       <h2>Callback RISKEVENT</h2>
       <p>Event risiko dikirim SDK lewat <code>registerService(callback, Type.RISKEVENT, 0.5)</code>. Callback menerima sebuah objek JSON:</p>
-      <div class="codeblock"><div class="cbar"><span class="fname">isi callback (JSON asli dari SDK)</span><button class="copy">Copy</button></div><pre>{
-  "key": "event_risk_root",                 <span class="cmt">// jenis ancaman</span>
-  "responseType": 1,                          <span class="cmt">// aksi RASP (int)</span>
-  "responseI18n": "Perangkat ter-root ..."    <span class="cmt">// pesan terlokalisasi</span>
+      <div class="codeblock"><div class="cbar"><span class="fname">isi callback RISKEVENT (JSON asli, terverifikasi di emulator)</span><button class="copy">Copy</button></div><pre>{
+  "datatype": "riskevent",
+  "key": "event_android_unofficial_installation_source", <span class="cmt">// jenis ancaman</span>
+  "name": "Unofficial Installation Source",              <span class="cmt">// nama singkat</span>
+  "desc": "Unofficial Installation Source",
+  "riskLevel": "high",                                    <span class="cmt">// low | medium | high</span>
+  "responseType": 1,                                      <span class="cmt">// aksi RASP (int)</span>
+  "responseI18n": "[{\"language\":\"en_US\",\"alerttitle\":\"...\",\"alertmsg\":\"...\"}]",
+  "eventId": "1141###&lt;udid&gt;###&lt;start_id&gt;###11###event_android_unofficial_installation_source",
+  "time": 1789828899241
 }</pre></div>
+      <div class="tip"><b>Diverifikasi langsung di emulator</b>
+        <p>Diuji dengan app contoh Kotlin (SDK 5.14.0, app_id 1141) di Android emulator: callback benar-benar terpanggil (<code>callbacks:2</code>, salah satunya milik aplikasi), dengan struktur payload persis seperti di atas. Event yang terpicu: <code>event_emulator_android</code>, <code>event_high_risk_emulator_android</code>, <code>event_android_unofficial_installation_source</code>, <code>event_android_screen_reader_capability</code>. Nilai <code>key</code> ini <b>sama persis</b> dengan <code>Security event</code> pada metode S3, jadi rule SIEM yang sama langsung berlaku.</p>
+      </div>
       <table>
         <tr><th>Field callback</th><th>Arti</th></tr>
         <tr><td><code>key</code></td><td>Jenis ancaman, mis. <code>event_risk_root</code>, <code>event_high_risk_MITM_android</code>. Ini yang jadi <code>security_event</code> di SIEM.</td></tr>
+        <tr><td><code>name</code> / <code>desc</code></td><td>Nama &amp; deskripsi singkat ancaman.</td></tr>
+        <tr><td><code>riskLevel</code></td><td><code>low</code> / <code>medium</code> / <code>high</code>, pakai ini untuk memetakan severity di SIEM.</td></tr>
         <tr><td><code>responseType</code></td><td>Kode aksi respons RASP (integer).</td></tr>
-        <tr><td><code>responseI18n</code></td><td>Teks pesan respons (sesuai bahasa).</td></tr>
+        <tr><td><code>responseI18n</code></td><td>Teks pesan respons (JSON per bahasa: alerttitle, alertmsg, buttonMsg).</td></tr>
+        <tr><td><code>eventId</code></td><td>ID unik event (<code>appId###udid###startId###seq###key</code>), berguna untuk de-duplikasi.</td></tr>
+        <tr><td><code>time</code></td><td>Waktu event (epoch ms).</td></tr>
       </table>
       <p>Callback kedua, <code>Type.DEVINFO</code>, memberi <b>sidik jari perangkat</b> (mis. <code>udid</code>). Simpan nilai terakhirnya, lalu gabungkan ke tiap event agar SIEM tahu perangkat mana.</p>
       <div class="note"><b>Kabar baik</b><p>Sample resmi SecIron sudah menuliskan di komentar: <i>"forward <code>json</code> to your backend REST API"</i>. Jadi meneruskan event ke collector memang alur yang diniatkan.</p></div>
@@ -195,6 +208,8 @@
   "source": "sdk_callback",
   "ironsky": {
     "security_event": "event_risk_root",
+    "risk_level": "high",
+    "event_id": "1141###1a2b3c4d...###1789...###11###event_risk_root",
     "response_type": 1,
     "response_message": "Perangkat ter-root terdeteksi",
     "udid": "1a2b3c4d-0000-demo-udid-999999999999",
